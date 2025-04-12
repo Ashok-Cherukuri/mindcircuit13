@@ -1,0 +1,68 @@
+pipeline { 
+   agent any 
+       tools { 
+          maven 'maven3' 
+           } 
+   stages { 
+      stage('Checkout') { 
+            steps { 
+             echo 'Cloning GIT HUB Repo' 
+                git branch: 'main', url: 'https://github.com/Ashok-Cherukuri/mindcircuit13.git'
+            }   
+        } 
+ 
+       stage('SonarQube Scan') {
+    steps {
+        echo 'Scanning project'
+        sh 'ls -ltr'
+        withCredentials([string(credentialsId:'sonarabctoken', variable:'sonarabctoken')]) {
+            sh '''mvn sonar:sonar \
+                -Dsonar.host.url=http://3.16.30.37:9000 \
+                -Dsonar.login=$sonarabctoken'''
+        }
+    }
+}
+    stage('Build Artifact') { 
+            steps { 
+                echo 'Build Artifact' 
+                sh 'mvn clean package' 
+            } 
+        } 
+    stage('Build Docker Image') { 
+           steps { 
+                echo 'Build Docker Image' 
+                sh 'docker build -t abc2kch/my-fourth-abc-image:${BUILD_NUMBER} .' 
+            } 
+        } 
+    stage('Push to Docker Hub') { 
+           steps { 
+             script { 
+                    withCredentials([string(credentialsId:'dockerhubtoken', variable:'dockerhubtoken')]) { 
+                        sh 'docker login -u abc2kch -p ${dockerhubtoken}'
+         } 
+                    sh 'docker push abc2kch/my-fourth-abc-image:${BUILD_NUMBER}' 
+                    echo 'Pushed to Docker Hub' 
+                } 
+            } 
+        } 
+    stage('Update Deployment File') { 
+            environment { 
+                GIT_REPO_NAME = "mindcircuit13" 
+                GIT_USER_NAME = "Ashok-Cherukuri" 
+            } 
+            steps { 
+                echo 'Update Deployment File' 
+                withCredentials([string(credentialsId: 'ghtoken', variable: 'ghtoken')]) { 
+                    sh ''' 
+                        git config user.email "abc2kch@gmail.com" 
+                        git config user.name "Ashok-Cherukuri" 
+                        sed -i "s/my-fourth-abc-image:.*/my-fourth-abc-image:${BUILD_NUMBER}/g" deploymentfiles/deployment.yml 
+                        git add . 
+                        git commit -m "Update deployment image to version ${BUILD_NUMBER}" 
+                        git push https://${ghtoken}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main 
+                    ''' 
+                } 
+            }
+    }
+   }
+}
