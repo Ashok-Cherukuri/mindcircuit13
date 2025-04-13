@@ -17,7 +17,7 @@ pipeline {
         sh 'ls -ltr'
         withCredentials([string(credentialsId:'sonarabctoken', variable:'sonarabctoken')]) {
             sh '''mvn sonar:sonar \
-                -Dsonar.host.url=http://3.16.30.37:9000 \
+                -Dsonar.host.url=http://18.224.19.190:9090 \
                 -Dsonar.login=$sonarabctoken'''
         }
     }
@@ -37,8 +37,8 @@ pipeline {
     stage('Push to Docker Hub') { 
            steps { 
              script { 
-                    withCredentials([string(credentialsId:'dockerhubtoken', variable:'dockerhubtoken')]) { 
-                        sh 'docker login -u abc2kch -p ${dockerhubtoken}'
+                    withCredentials([string(credentialsId:'dhabctoken', variable:'dhabctoken')]) { 
+                        sh 'docker login -u abc2kch -p ${dhabctoken}'
          } 
                     sh 'docker push abc2kch/my-fourth-abc-image:${BUILD_NUMBER}' 
                     echo 'Pushed to Docker Hub' 
@@ -52,14 +52,14 @@ pipeline {
             } 
             steps { 
                 echo 'Update Deployment File' 
-                withCredentials([string(credentialsId: 'ghtoken', variable: 'ghtoken')]) { 
+                withCredentials([string(credentialsId: 'ghubabctoken', variable: 'ghubabctoken')]) { 
                     sh ''' 
                         git config user.email "abc2kch@gmail.com" 
                         git config user.name "Ashok-Cherukuri" 
                         sed -i "s/my-fourth-abc-image:.*/my-fourth-abc-image:${BUILD_NUMBER}/g" deploymentfiles/deployment.yml 
                         git add . 
                         git commit -m "Update deployment image to version ${BUILD_NUMBER}" 
-                        git push https://${ghtoken}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main 
+                        git push https://${ghubabctoken}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main 
                     ''' 
                 } 
             }
