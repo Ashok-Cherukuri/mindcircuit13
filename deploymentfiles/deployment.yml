@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: mc-app
-        image: abc2kch/my-fourth-abc-image:19
+        image: abc2kch/my-fourth-abc-image:20
         ports:
         - containerPort: 8080
 
